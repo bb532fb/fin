@@ -41,6 +41,17 @@ export function AlertWatch() {
     return () => controller.abort();
   }, []);
 
+  // Vercel freezes serverless timers; keep Telegram watching while this page is open.
+  useEffect(() => {
+    if (!ready) return;
+    const tick = () => {
+      void fetch("/api/alerts/tick", { method: "POST", cache: "no-store" }).catch(() => undefined);
+    };
+    tick();
+    const id = window.setInterval(tick, 60_000);
+    return () => window.clearInterval(id);
+  }, [ready]);
+
   function publish(nextVenues: MarketVenue[], nextMuted: PocketSymbol[]) {
     touched.current = true;
     latest.current = { venues: nextVenues, muted: nextMuted };
@@ -156,7 +167,7 @@ export function AlertWatch() {
         </div>
       )}
       <p className="text-center text-xs text-subtle">
-        Ամեն րոպե նայում է 1, 3 և 5 րոպեի գրաֆիկները։ Pocket Option-ը միայն ոչ OTC է։
+        Կայքը բաց լինելիս ամեն րոպե նայում է 1, 3 և 5 րոպեի գրաֆիկները։ Pocket Option-ը միայն ոչ OTC է։
       </p>
     </div>
   );

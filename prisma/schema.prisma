@@ -31,12 +31,16 @@ enum AnalysisStatus {
 
 /// Singleton row for Telegram alert venue / mute switches (id is always "default").
 model AlertWatch {
-  id        String   @id @default("default")
-  updatedAt DateTime @updatedAt
+  id        String    @id @default("default")
+  updatedAt DateTime  @updatedAt
   /// JSON array of MarketVenue values.
   venues    Json
   /// JSON array of muted Pocket symbols.
   muted     Json
+  /// Last sent direction per alert id (`venue:timeframe:symbol` → LONG/SHORT/NO_TRADE).
+  signalState Json    @default("{}")
+  /// Last successful alert tick. Used as a cross-instance lock on serverless.
+  lastTickAt  DateTime?
 }
 
 model Analysis {

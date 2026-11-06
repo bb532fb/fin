@@ -37,6 +37,19 @@ function fromJson(venues: unknown, muted: unknown): AlertWatchState {
   };
 }
 
+async function ensureRow(): Promise<void> {
+  await getDb().alertWatch.upsert({
+    where: { id: ROW_ID },
+    create: {
+      id: ROW_ID,
+      venues: [...DEFAULT_ALERT_VENUES],
+      muted: [...DEFAULT_MUTED_POCKET],
+      signalState: {},
+    },
+    update: {},
+  });
+}
+
 async function readDb(): Promise<AlertWatchState | null> {
   try {
     const row = await getDb().alertWatch.findUnique({ where: { id: ROW_ID } });
@@ -78,7 +91,12 @@ export async function setAlertWatch(
   try {
     await getDb().alertWatch.upsert({
       where: { id: ROW_ID },
-      create: { id: ROW_ID, venues: state.venues, muted: state.muted },
+      create: {
+        id: ROW_ID,
+        venues: state.venues,
+        muted: state.muted,
+        signalState: {},
+      },
       update: { venues: state.venues, muted: state.muted },
     });
   } catch (error) {
@@ -88,4 +106,68 @@ export async function setAlertWatch(
     });
   }
   return { venues: [...state.venues], muted: [...state.muted] };
+}
+
+/** Loads the last sent direction map so serverless instances do not re-spam. */
+export async function getAlertSignalState(): Promise<Map<string, string>> {
+  try {
+    await ensureRow();
+    const row = await getDb().alertWatch.findUnique({
+      where: { id: ROW_ID },
+      select: { signalState: true },
+    });
+    const raw = row?.signalState;
+    if (!raw || typeof raw !== "object" || Array.isArray(raw)) return new Map();
+    return new Map(Object.entries(raw as Record<string, unknown>).map(([k, v]) => [k, String(v)]));
+  } catch (error) {
+    logger.warn("alert_signal_state_read_failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return new Map();
+  }
+}
+
+export async function saveAlertSignalState(state: ReadonlyMap<string, string>): Promise<void> {
+  const signalState = Object.fromEntries(state);
+  try {
+    await getDb().alertWatch.upsert({
+      where: { id: ROW_ID },
+      create: {
+        id: ROW_ID,
+        venues: [...DEFAULT_ALERT_VENUES],
+        muted: [...DEFAULT_MUTED_POCKET],
+        signalState,
+      },
+      update: { signalState },
+    });
+  } catch (error) {
+    logger.warn("alert_signal_state_write_failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
+}
+
+/**
+ * Claims the next alert pass if the previous one finished at least `minIntervalMs` ago.
+ * Returns false when another instance already ran recently.
+ */
+export async function claimAlertTick(minIntervalMs: number): Promise<boolean> {
+  const now = new Date();
+  const cutoff = new Date(now.getTime() - minIntervalMs);
+  try {
+    await ensureRow();
+    const claimed = await getDb().alertWatch.updateMany({
+      where: {
+        id: ROW_ID,
+        OR: [{ lastTickAt: null }, { lastTickAt: { lt: cutoff } }],
+      },
+      data: { lastTickAt: now },
+    });
+    return claimed.count > 0;
+  } catch (error) {
+    logger.warn("alert_tick_claim_failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return true;
+  }
 }
