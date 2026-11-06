@@ -2,8 +2,11 @@
 
 import { useEffect, useRef, useState } from "react";
 import { DEFAULT_MUTED_POCKET } from "@/lib/alerts/watch-venues";
+import type { PocketSymbol } from "@/lib/alerts/watch-venues";
 import { MARKETS, POCKET_SYMBOLS, formatSymbolPair } from "@/lib/config/market";
 import type { MarketVenue } from "@/lib/config/market";
+
+type WatchDraft = { venues: MarketVenue[]; muted: PocketSymbol[] };
 
 const OPTIONS: readonly { value: MarketVenue; label: string }[] = [
   { value: "spot", label: "Spot" },
@@ -13,10 +16,10 @@ const OPTIONS: readonly { value: MarketVenue; label: string }[] = [
 
 export function AlertWatch() {
   const [venues, setVenues] = useState<MarketVenue[]>(["futures"]);
-  const [muted, setMuted] = useState<string[]>([...DEFAULT_MUTED_POCKET]);
+  const [muted, setMuted] = useState<PocketSymbol[]>([...DEFAULT_MUTED_POCKET]);
   const [ready, setReady] = useState(false);
-  const latest = useRef({ venues: ["futures"] as MarketVenue[], muted: [...DEFAULT_MUTED_POCKET] });
-  const committed = useRef({ venues: ["futures"] as MarketVenue[], muted: [...DEFAULT_MUTED_POCKET] });
+  const latest = useRef<WatchDraft>({ venues: ["futures"], muted: [...DEFAULT_MUTED_POCKET] });
+  const committed = useRef<WatchDraft>({ venues: ["futures"], muted: [...DEFAULT_MUTED_POCKET] });
   const dirty = useRef(false);
   const writing = useRef(false);
   const touched = useRef(false);
@@ -25,7 +28,7 @@ export function AlertWatch() {
     const controller = new AbortController();
     void fetch("/api/alerts", { signal: controller.signal })
       .then((response) => (response.ok ? response.json() : null))
-      .then((body: { venues?: MarketVenue[]; muted?: string[] } | null) => {
+      .then((body: { venues?: MarketVenue[]; muted?: PocketSymbol[] } | null) => {
         if (!body?.venues || touched.current) return;
         const next = { venues: body.venues, muted: body.muted ?? [...DEFAULT_MUTED_POCKET] };
         latest.current = next;
@@ -38,7 +41,7 @@ export function AlertWatch() {
     return () => controller.abort();
   }, []);
 
-  function publish(nextVenues: MarketVenue[], nextMuted: string[]) {
+  function publish(nextVenues: MarketVenue[], nextMuted: PocketSymbol[]) {
     touched.current = true;
     latest.current = { venues: nextVenues, muted: nextMuted };
     setVenues(nextVenues);
@@ -83,7 +86,7 @@ export function AlertWatch() {
     publish(MARKETS.filter((item) => next.includes(item)), current.muted);
   }
 
-  function toggleMuted(symbol: string) {
+  function toggleMuted(symbol: PocketSymbol) {
     const current = latest.current;
     const next = current.muted.includes(symbol)
       ? current.muted.filter((item) => item !== symbol)
