@@ -1,0 +1,88 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Direction {
+  LONG
+  SHORT
+  NO_TRADE
+}
+
+enum RiskLevel {
+  LOW
+  MEDIUM
+  HIGH
+}
+
+/// PENDING/WIN/LOSS/EXPIRED apply to LONG/SHORT signals.
+/// NOT_APPLICABLE is used for NO_TRADE results, which are stored for statistics but never tracked.
+enum AnalysisStatus {
+  PENDING
+  WIN
+  LOSS
+  EXPIRED
+  NOT_APPLICABLE
+}
+
+model Analysis {
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+
+  /// Reserved for future authentication.
+  userId String?
+
+  symbol    String
+  timeframe String
+  /// spot, futures, or pocket. Existing rows are spot.
+  market    String   @default("spot")
+
+  /// Live price at analysis time (risk plan reference).
+  price          Decimal  @db.Decimal(30, 12)
+  /// Decimal places of the symbol tick size at analysis time (display only).
+  pricePrecision Int
+  /// Open time of the last closed candle used for indicators.
+  candleOpenTime DateTime
+
+  direction      Direction
+  confidence     Int
+  signalStrength String
+  trend          String
+  risk           RiskLevel?
+
+  entryMin   Decimal? @db.Decimal(30, 12)
+  entryMax   Decimal? @db.Decimal(30, 12)
+  stopLoss   Decimal? @db.Decimal(30, 12)
+  takeProfit Decimal? @db.Decimal(30, 12)
+  riskReward Decimal? @db.Decimal(10, 2)
+
+  support    Decimal? @db.Decimal(30, 12)
+  resistance Decimal? @db.Decimal(30, 12)
+
+  indicators   Json
+  conditions   Json
+  noTradeCode  String?
+  explanation  Json
+  explanationSource String
+  aiModel      String?
+
+  /// Version of indicator/signal logic. Required to compare win rates across logic changes.
+  engineVersion String
+
+  // Performance tracking (populated by a future resolver job).
+  status            AnalysisStatus @default(PENDING)
+  expiresAt         DateTime?
+  entryTriggeredAt  DateTime?
+  resolvedAt        DateTime?
+  priceAtResolution Decimal?       @db.Decimal(30, 12)
+
+  @@index([createdAt(sort: Desc)])
+  @@index([market, createdAt(sort: Desc)])
+  @@index([symbol, timeframe, createdAt(sort: Desc)])
+  @@index([status, expiresAt])
+  @@index([userId, createdAt(sort: Desc)])
+}
