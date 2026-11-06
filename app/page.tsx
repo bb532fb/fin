@@ -28,9 +28,9 @@ function HeroBackdrop() {
 export default function DashboardPage() {
   return (
     <div className="flex flex-col gap-8">
-      <div className="relative isolate flex flex-col gap-4 pt-4 text-center animate-fade-up">
+      <div className="relative isolate flex flex-col gap-4 overflow-x-clip pt-4 text-center animate-fade-up">
         <HeroBackdrop />
-        <h1 className="hero-title bg-gradient-to-r from-text via-text to-accent-glow bg-clip-text text-4xl font-black tracking-tight text-transparent sm:text-5xl">
+        <h1 className="hero-title bg-gradient-to-r from-text via-text to-accent-glow bg-clip-text text-3xl font-black tracking-tight text-transparent sm:text-5xl">
           Շուկայի վերլուծություն
         </h1>
         <p className="mx-auto max-w-2xl text-sm leading-relaxed text-muted sm:text-base">

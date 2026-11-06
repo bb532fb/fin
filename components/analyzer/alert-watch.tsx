@@ -96,7 +96,7 @@ export function AlertWatch() {
 
   const allOn = OPTIONS.every((option) => venues.includes(option.value));
   const buttonClass = (active: boolean) =>
-    `h-9 rounded-xl text-xs font-semibold transition disabled:opacity-60 sm:text-sm ${
+    `h-9 rounded-xl text-xs font-semibold transition-colors duration-150 disabled:opacity-60 sm:text-sm ${
       active ? "bg-surface-raised text-text" : "bg-short/15 text-short"
     }`;
 
@@ -143,7 +143,7 @@ export function AlertWatch() {
                   aria-label={`${formatSymbolPair(symbol)} ${off ? "անջատված" : "միացված"}`}
                   disabled={!ready}
                   onClick={() => toggleMuted(symbol)}
-                  className={`flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition disabled:opacity-60 sm:text-sm ${
+                  className={`flex h-9 items-center gap-1.5 rounded-xl px-3 text-xs font-semibold transition-colors duration-150 disabled:opacity-60 sm:text-sm ${
                     off ? "bg-short/15 text-short" : "bg-surface-raised text-text"
                   }`}
                 >

@@ -55,10 +55,10 @@ export function MarketSwitch({
               aria-pressed={active}
               disabled={disabled}
               onClick={() => onChange(option.value)}
-              className={`h-11 rounded-xl px-2 text-xs font-bold tracking-wide transition disabled:opacity-60 sm:text-sm ${
+              className={`h-11 rounded-xl px-2 text-xs font-bold tracking-wide transition-[color,opacity,box-shadow] duration-150 disabled:opacity-60 sm:text-sm ${
                 active
                   ? "bg-gradient-to-r from-accent to-violet text-white shadow-[0_0_18px_rgb(61_139_253_/_0.35)]"
-                  : "text-muted hover:text-text"
+                  : "bg-transparent text-muted shadow-none hover:text-text"
               }`}
             >
               {option.label}
@@ -81,8 +81,10 @@ export function MarketSwitch({
                 aria-pressed={active}
                 disabled={disabled}
                 onClick={() => onPocketBookChange(option.value)}
-                className={`h-9 rounded-lg text-sm font-semibold transition disabled:opacity-60 ${
-                  active ? "bg-surface-raised text-text" : "text-muted hover:text-text"
+                className={`h-9 rounded-lg text-sm font-semibold transition-colors duration-150 disabled:opacity-60 ${
+                  active
+                    ? "bg-surface-raised text-text"
+                    : "bg-transparent text-muted hover:text-text"
                 }`}
               >
                 {option.label}

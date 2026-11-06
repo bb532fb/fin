@@ -34,9 +34,9 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
           }}
         />
       </head>
-      <body className="flex min-h-full flex-col font-sans">
+      <body className="flex min-h-full max-w-[100vw] flex-col overflow-x-clip font-sans">
         <SiteHeader />
-        <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-8 sm:px-6 sm:py-10">{children}</main>
+        <main className="mx-auto w-full max-w-6xl min-w-0 flex-1 px-4 py-8 sm:px-6 sm:py-10">{children}</main>
         <SiteFooter />
       </body>
     </html>

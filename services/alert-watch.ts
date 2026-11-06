@@ -1,6 +1,4 @@
 import "server-only";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import path from "node:path";
 import {
   DEFAULT_ALERT_VENUES,
   DEFAULT_MUTED_POCKET,
@@ -9,8 +7,10 @@ import {
 } from "@/lib/alerts/watch-venues";
 import type { PocketSymbol } from "@/lib/alerts/watch-venues";
 import type { MarketVenue } from "@/lib/config/market";
+import { getDb } from "@/lib/db";
+import { logger } from "@/lib/logger";
 
-const FILE = path.join(process.cwd(), ".data", "alert-watch.json");
+const ROW_ID = "default";
 
 export interface AlertWatchState {
   venues: MarketVenue[];
@@ -26,44 +26,66 @@ function store(): WatchGlobal {
   return globalThis as WatchGlobal;
 }
 
-function readFile(): AlertWatchState | null {
+function defaults(): AlertWatchState {
+  return { venues: [...DEFAULT_ALERT_VENUES], muted: [...DEFAULT_MUTED_POCKET] };
+}
+
+function fromJson(venues: unknown, muted: unknown): AlertWatchState {
+  return {
+    venues: Array.isArray(venues) ? normalizeAlertVenues(venues.map(String)) : [...DEFAULT_ALERT_VENUES],
+    muted: Array.isArray(muted) ? normalizeMutedPocket(muted.map(String)) : [...DEFAULT_MUTED_POCKET],
+  };
+}
+
+async function readDb(): Promise<AlertWatchState | null> {
   try {
-    const parsed = JSON.parse(readFileSync(FILE, "utf8")) as { venues?: unknown; muted?: unknown };
-    if (!Array.isArray(parsed.venues)) return null;
-    return {
-      venues: normalizeAlertVenues(parsed.venues.map(String)),
-      muted: Array.isArray(parsed.muted)
-        ? normalizeMutedPocket(parsed.muted.map(String))
-        : [...DEFAULT_MUTED_POCKET],
-    };
-  } catch {
+    const row = await getDb().alertWatch.findUnique({ where: { id: ROW_ID } });
+    if (!row) return null;
+    return fromJson(row.venues, row.muted);
+  } catch (error) {
+    logger.warn("alert_watch_read_failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return null;
   }
 }
 
-export function getAlertWatch(): AlertWatchState {
+export async function getAlertWatch(): Promise<AlertWatchState> {
   const saved = store().__alertWatch;
   if (saved) return { venues: [...saved.venues], muted: [...saved.muted] };
-  const state = readFile() ?? { venues: [...DEFAULT_ALERT_VENUES], muted: [...DEFAULT_MUTED_POCKET] };
+  const state = (await readDb()) ?? defaults();
   store().__alertWatch = state;
   return { venues: [...state.venues], muted: [...state.muted] };
 }
 
-export function getAlertVenues(): MarketVenue[] {
-  return getAlertWatch().venues;
+export async function getAlertVenues(): Promise<MarketVenue[]> {
+  return (await getAlertWatch()).venues;
 }
 
-export function getMutedPocket(): PocketSymbol[] {
-  return getAlertWatch().muted;
+export async function getMutedPocket(): Promise<PocketSymbol[]> {
+  return (await getAlertWatch()).muted;
 }
 
-export function setAlertWatch(venuesInput: readonly string[], mutedInput: readonly string[]): AlertWatchState {
+export async function setAlertWatch(
+  venuesInput: readonly string[],
+  mutedInput: readonly string[],
+): Promise<AlertWatchState> {
   const state: AlertWatchState = {
     venues: normalizeAlertVenues(venuesInput),
     muted: normalizeMutedPocket(mutedInput),
   };
   store().__alertWatch = state;
-  mkdirSync(path.dirname(FILE), { recursive: true });
-  writeFileSync(FILE, JSON.stringify(state));
+  try {
+    await getDb().alertWatch.upsert({
+      where: { id: ROW_ID },
+      create: { id: ROW_ID, venues: state.venues, muted: state.muted },
+      update: { venues: state.venues, muted: state.muted },
+    });
+  } catch (error) {
+    // Keep the in-memory switch so this instance still watches the chosen venues.
+    logger.warn("alert_watch_write_failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
   return { venues: [...state.venues], muted: [...state.muted] };
 }

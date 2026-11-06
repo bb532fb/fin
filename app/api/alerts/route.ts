@@ -9,8 +9,8 @@ const bodySchema = z.strictObject({
   muted: z.array(z.enum(POCKET_SYMBOLS)).max(POCKET_SYMBOLS.length),
 });
 
-export function GET(): Response {
-  return Response.json(getAlertWatch(), { headers: { "Cache-Control": "no-store" } });
+export async function GET(): Promise<Response> {
+  return Response.json(await getAlertWatch(), { headers: { "Cache-Control": "no-store" } });
 }
 
 /** Local switches only. Not counted against the analyze limit. */

@@ -67,7 +67,7 @@ function delay(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-/** Queues work so only `limit` calls run at once. */
+/** Queues work so only `limit` calls run at once. Sync throws must not become unhandled rejections. */
 function createGate(limit: number) {
   let active = 0;
   const waiting: Array<() => void> = [];
@@ -75,10 +75,16 @@ function createGate(limit: number) {
     return new Promise<T>((resolve, reject) => {
       const start = () => {
         active += 1;
-        run().then(resolve, reject).finally(() => {
+        try {
+          Promise.resolve(run()).then(resolve, reject).finally(() => {
+            active -= 1;
+            waiting.shift()?.();
+          });
+        } catch (error) {
           active -= 1;
           waiting.shift()?.();
-        });
+          reject(error);
+        }
       };
       if (active < limit) start();
       else waiting.push(start);
@@ -182,6 +188,9 @@ function createBinanceMarketData(source: BinanceSource): MarketDataProvider & Ca
       throw unavailable("Շուկայի տվյալների սահմանափակում։ Փորձիր ավելի ուշ։", undefined, retryAfter);
     }
     if (response.status === 451 || response.status === 403) {
+      // Geo blocks do not recover on retry from the same IP; stop the stampede.
+      circuitOpenUntil = Date.now() + CIRCUIT_OPEN_MS;
+      consecutiveFailures = 0;
       throw unavailable("Շուկայի տվյալները այս սերվերի տարածաշրջանից հասանելի չեն։");
     }
     if (response.status >= 500) noteFailure();

@@ -29,6 +29,16 @@ enum AnalysisStatus {
   NOT_APPLICABLE
 }
 
+/// Singleton row for Telegram alert venue / mute switches (id is always "default").
+model AlertWatch {
+  id        String   @id @default("default")
+  updatedAt DateTime @updatedAt
+  /// JSON array of MarketVenue values.
+  venues    Json
+  /// JSON array of muted Pocket symbols.
+  muted     Json
+}
+
 model Analysis {
   id        String   @id @default(cuid())
   createdAt DateTime @default(now())

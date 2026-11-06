@@ -65,8 +65,8 @@ export function startSignalAlerts(): void {
       if (!memory.__finWelcomed) {
         memory.__finWelcomed = await sendTelegramMessage(token, chatId, TELEGRAM_WELCOME);
       }
-      const venues = getAlertVenues();
-      const mutedPocket = new Set<string>(getMutedPocket());
+      const venues = await getAlertVenues();
+      const mutedPocket = new Set<string>(await getMutedPocket());
       const scans = await Promise.all(
         venues.flatMap((venue) =>
           ALERT_TIMEFRAMES.map(async (timeframe) => {
