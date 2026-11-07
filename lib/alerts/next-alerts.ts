@@ -1,12 +1,12 @@
 import type { RiskLevel, Trend } from "@/types/signal";
 
-/** Telegram stays quieter than the site. Under 60 and a neutral higher chart do not send. */
+/** Telegram stays quieter than the site. Under 60 does not send. */
 const ALERT_MIN_CONFIDENCE = 60;
 
 /**
  * Only a direction the engine itself accepted.
- * 1m and 3m must agree with the 15m trend, 5m with the 1h trend.
- * That trend is already the `higherTrend` stored on the scan.
+ * Blocks when the higher chart is the opposite side.
+ * NEUTRAL (or missing) higher trend is allowed so alerts are not overly quiet.
  */
 export function toAlertDirection(item: {
   direction: "LONG" | "SHORT" | "NO_TRADE";
@@ -16,8 +16,8 @@ export function toAlertDirection(item: {
 }): "LONG" | "SHORT" | "NO_TRADE" {
   if (item.direction !== "LONG" && item.direction !== "SHORT") return "NO_TRADE";
   if (item.risk === "HIGH" || item.confidence < ALERT_MIN_CONFIDENCE) return "NO_TRADE";
-  const aligned = item.direction === "LONG" ? "BULLISH" : "BEARISH";
-  if (item.higherTrend !== aligned) return "NO_TRADE";
+  const opposing = item.direction === "LONG" ? "BEARISH" : "BULLISH";
+  if (item.higherTrend === opposing) return "NO_TRADE";
   return item.direction;
 }
 

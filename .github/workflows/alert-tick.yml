@@ -1,0 +1,27 @@
+name: Alert tick
+
+# Keeps Telegram watching even when no browser tab is open.
+# GitHub schedules run about every 5 minutes (not exact to the second).
+on:
+  schedule:
+    - cron: "*/5 * * * *"
+  workflow_dispatch:
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    steps:
+      - name: POST /api/alerts/tick
+        env:
+          ALERT_TICK_URL: ${{ vars.ALERT_TICK_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+          url="${ALERT_TICK_URL:-https://fin-ten-lake.vercel.app/api/alerts/tick}"
+          if [ -n "${CRON_SECRET:-}" ]; then
+            curl -fsS -X POST -H "Authorization: Bearer ${CRON_SECRET}" "$url"
+          else
+            host="${url#https://}"
+            host="${host%%/*}"
+            curl -fsS -X POST -H "Origin: https://${host}" "$url"
+          fi

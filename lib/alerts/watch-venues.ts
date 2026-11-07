@@ -2,7 +2,7 @@ import { MARKETS, POCKET_SYMBOLS } from "@/lib/config/market";
 import type { MarketVenue } from "@/lib/config/market";
 
 /** What the Telegram bot watches until the user changes it on the site. */
-export const DEFAULT_ALERT_VENUES: readonly MarketVenue[] = ["futures"];
+export const DEFAULT_ALERT_VENUES: readonly MarketVenue[] = ["futures", "pocket"];
 
 /** Pocket pairs that stay quiet until the star is cleared. Bitcoin and Ethereum start off. */
 export const DEFAULT_MUTED_POCKET: readonly (typeof POCKET_SYMBOLS)[number][] = ["BTCUSDT", "ETHUSDT"];

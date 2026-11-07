@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { DEFAULT_MUTED_POCKET } from "@/lib/alerts/watch-venues";
+import { DEFAULT_ALERT_VENUES, DEFAULT_MUTED_POCKET } from "@/lib/alerts/watch-venues";
 import type { PocketSymbol } from "@/lib/alerts/watch-venues";
 import { MARKETS, POCKET_SYMBOLS, formatSymbolPair } from "@/lib/config/market";
 import type { MarketVenue } from "@/lib/config/market";
@@ -15,11 +15,11 @@ const OPTIONS: readonly { value: MarketVenue; label: string }[] = [
 ];
 
 export function AlertWatch() {
-  const [venues, setVenues] = useState<MarketVenue[]>(["futures"]);
+  const [venues, setVenues] = useState<MarketVenue[]>([...DEFAULT_ALERT_VENUES]);
   const [muted, setMuted] = useState<PocketSymbol[]>([...DEFAULT_MUTED_POCKET]);
   const [ready, setReady] = useState(false);
-  const latest = useRef<WatchDraft>({ venues: ["futures"], muted: [...DEFAULT_MUTED_POCKET] });
-  const committed = useRef<WatchDraft>({ venues: ["futures"], muted: [...DEFAULT_MUTED_POCKET] });
+  const latest = useRef<WatchDraft>({ venues: [...DEFAULT_ALERT_VENUES], muted: [...DEFAULT_MUTED_POCKET] });
+  const committed = useRef<WatchDraft>({ venues: [...DEFAULT_ALERT_VENUES], muted: [...DEFAULT_MUTED_POCKET] });
   const dirty = useRef(false);
   const writing = useRef(false);
   const touched = useRef(false);

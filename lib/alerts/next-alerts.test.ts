@@ -3,7 +3,7 @@ import { formatTradeAlert, msUntilMinuteSlot } from "@/lib/alerts/format-alert";
 import { nextAlertState, toAlertDirection } from "@/lib/alerts/next-alerts";
 
 describe("toAlertDirection", () => {
-  it("sends only an engine trade that the higher chart agrees with", () => {
+  it("sends an engine trade when the higher chart agrees or is neutral", () => {
     expect(
       toAlertDirection({
         direction: "SHORT",
@@ -20,9 +20,17 @@ describe("toAlertDirection", () => {
         higherTrend: "BULLISH",
       }),
     ).toBe("LONG");
+    expect(
+      toAlertDirection({
+        direction: "LONG",
+        risk: "LOW",
+        confidence: 90,
+        higherTrend: "NEUTRAL",
+      }),
+    ).toBe("LONG");
   });
 
-  it("stays quiet when the engine refused, the higher chart is not the same side, or the score is under 60", () => {
+  it("stays quiet when the engine refused, HTF is opposite, risk is high, or score is under 60", () => {
     expect(
       toAlertDirection({
         direction: "NO_TRADE",
@@ -36,7 +44,7 @@ describe("toAlertDirection", () => {
         direction: "LONG",
         risk: "LOW",
         confidence: 90,
-        higherTrend: "NEUTRAL",
+        higherTrend: "BEARISH",
       }),
     ).toBe("NO_TRADE");
     expect(
@@ -57,7 +65,7 @@ describe("toAlertDirection", () => {
     ).toBe("NO_TRADE");
   });
 
-  it("sends at 60 when the higher chart agrees", () => {
+  it("sends at 60 when the higher chart is not opposite", () => {
     expect(
       toAlertDirection({
         direction: "SHORT",
