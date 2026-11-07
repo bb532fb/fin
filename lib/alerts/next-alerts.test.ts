@@ -22,7 +22,7 @@ describe("toAlertDirection", () => {
     ).toBe("LONG");
   });
 
-  it("stays quiet when the engine refused, the higher chart is not the same side, or the score is under 75", () => {
+  it("stays quiet when the engine refused, the higher chart is not the same side, or the score is under 60", () => {
     expect(
       toAlertDirection({
         direction: "NO_TRADE",
@@ -43,7 +43,7 @@ describe("toAlertDirection", () => {
       toAlertDirection({
         direction: "SHORT",
         risk: "LOW",
-        confidence: 74,
+        confidence: 59,
         higherTrend: "BEARISH",
       }),
     ).toBe("NO_TRADE");
@@ -55,6 +55,17 @@ describe("toAlertDirection", () => {
         higherTrend: "BULLISH",
       }),
     ).toBe("NO_TRADE");
+  });
+
+  it("sends at 60 when the higher chart agrees", () => {
+    expect(
+      toAlertDirection({
+        direction: "SHORT",
+        risk: "LOW",
+        confidence: 60,
+        higherTrend: "BEARISH",
+      }),
+    ).toBe("SHORT");
   });
 });
 

@@ -52,7 +52,7 @@ export interface SignalAlertTickResult {
 }
 
 /**
- * One alert pass: scan watched venues, send Telegram only for new 75+ aligned trades.
+ * One alert pass: scan watched venues, send Telegram only for new 60+ aligned trades.
  * Safe to call from a cron/route on Vercel — does not rely on a long-lived timer.
  */
 export async function runSignalAlertTick(): Promise<SignalAlertTickResult> {

@@ -1,7 +1,7 @@
 import type { RiskLevel, Trend } from "@/types/signal";
 
-/** Telegram stays quieter than the site. 60–74 and a neutral higher chart do not send. */
-const ALERT_MIN_CONFIDENCE = 75;
+/** Telegram stays quieter than the site. Under 60 and a neutral higher chart do not send. */
+const ALERT_MIN_CONFIDENCE = 60;
 
 /**
  * Only a direction the engine itself accepted.
